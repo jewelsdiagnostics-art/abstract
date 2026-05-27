@@ -1,0 +1,21 @@
+{
+  "note": "Optional seed data reference. The app uses localStorage in js/app.js.",
+  "statuses": [
+    "Draft",
+    "Submitted",
+    "Under Screening",
+    "Under Review",
+    "Revision Requested",
+    "Accepted",
+    "Rejected",
+    "Scheduled"
+  ],
+  "rubric": [
+    "Originality",
+    "Scientific quality",
+    "Relevance",
+    "Clarity",
+    "Methodology",
+    "Overall recommendation"
+  ]
+}
