@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Conference Abstract System</title>
+	<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+	<div id="app" class="app-shell">
+		<header class="topbar">
+			<div class="brand">
+				<div class="brand__mark" aria-hidden="true">CAS</div>
+				<div class="brand__text">
+					<div class="brand__title">Conference Abstract System</div>
+					<div class="brand__subtitle">Submission & Review Management</div>
+				</div>
+			</div>
+			<div class="topbar__right">
+				<div id="sessionBadge" class="session-badge hidden"></div>
+				<button id="btnOpenNotifications" class="btn btn--ghost hidden" type="button">Notifications</button>
+				<button id="btnLogout" class="btn btn--outline hidden" type="button">Log out</button>
+			</div>
+		</header>
+
+		<div class="layout">
+			<aside id="sidebar" class="sidebar hidden" aria-label="Sidebar navigation">
+				<nav class="nav">
+					<div class="nav__section">
+						<div class="nav__heading">Workspace</div>
+						<a class="nav__item" href="#" data-route="dashboard">Dashboard</a>
+						<a class="nav__item" href="#" data-route="profile">Profile</a>
+					</div>
+
+					<div id="navAuthor" class="nav__section hidden">
+						<div class="nav__heading">Author</div>
+						<a class="nav__item" href="#" data-route="author-submissions">My Abstracts</a>
+						<a class="nav__item" href="#" data-route="author-new">New Submission</a>
+					</div>
+
+					<div id="navReviewer" class="nav__section hidden">
+						<div class="nav__heading">Reviewer</div>
+						<a class="nav__item" href="#" data-route="reviewer-queue">Assigned to Me</a>
+						<a class="nav__item" href="#" data-route="reviewer-guidance">Reviewer Guidance</a>
+					</div>
+
+					<div id="navAdmin" class="nav__section hidden">
+						<div class="nav__heading">Administrator</div>
+						<a class="nav__item" href="#" data-route="admin-abstracts">All Abstracts</a>
+						<a class="nav__item" href="#" data-route="admin-reviewers">Reviewer Management</a>
+						<a class="nav__item" href="#" data-route="admin-analytics">Analytics & Reports</a>
+						<a class="nav__item" href="#" data-route="admin-audit">Audit Trail</a>
+					</div>
+				</nav>
+				<div class="sidebar__footer">
+					<div class="muted">Prototype UI (front-end only)</div>
+				</div>
+			</aside>
+
+			<main class="main" aria-live="polite">
+				<div id="toastRegion" class="toast-region" aria-live="assertive" aria-atomic="true"></div>
+
+				<section id="viewAuth" class="view">
+					<div class="auth-grid">
+						<div class="card auth-card">
+							<h1 class="h2">Sign in</h1>
+							<p class="muted">Use your email and password to access your dashboard.</p>
+							<form id="formLogin" class="form" autocomplete="on">
+								<div class="form__row">
+									<label class="label" for="loginEmail">Email</label>
+									<input id="loginEmail" class="input" type="email" required placeholder="name@domain.com" />
+								</div>
+								<div class="form__row">
+									<label class="label" for="loginPassword">Password</label>
+									<input id="loginPassword" class="input" type="password" required minlength="8" placeholder="Minimum 8 characters" />
+								</div>
+								<div class="form__row form__row--inline">
+									<button class="btn btn--primary" type="submit">Sign in</button>
+									<button id="btnShowReset" class="btn btn--ghost" type="button">Forgot password?</button>
+								</div>
+							</form>
+							<div class="divider"></div>
+							<div class="auth-card__footer">
+								<div class="muted">No account?</div>
+								<button id="btnShowRegister" class="btn btn--outline" type="button">Create account</button>
+							</div>
+						</div>
+
+						<div class="card auth-card">
+							<h2 class="h3">Demo accounts</h2>
+							<ul class="list">
+								<li><span class="pill pill--blue">Admin</span> admin@demo.test / Password123</li>
+								<li><span class="pill pill--purple">Reviewer</span> reviewer@demo.test / Password123</li>
+								<li><span class="pill pill--green">Author</span> author@demo.test / Password123</li>
+							</ul>
+							<p class="muted small">Note: This is a front-end prototype. Password hashing + sessions must be implemented server-side.</p>
+						</div>
+					</div>
+				</section>
+
+				<section id="viewDashboard" class="view hidden">
+					<div class="page-head">
+						<div>
+							<h1 class="h2">Dashboard</h1>
+							<div id="dashboardSubtitle" class="muted">Overview</div>
+						</div>
+						<div class="page-actions">
+							<button id="btnQuickNewAbstract" class="btn btn--primary hidden" type="button">New Abstract</button>
+							<button id="btnQuickExport" class="btn btn--outline hidden" type="button">Export CSV</button>
+						</div>
+					</div>
+					<div id="dashboardCards" class="cards"></div>
+					<div class="grid-2">
+						<div class="card">
+							<div class="card__head">
+								<h2 class="h3">My work</h2>
+								<div class="muted small">Role-specific queue</div>
+							</div>
+							<div id="dashboardQueue" class="empty">No items.</div>
+						</div>
+						<div class="card">
+							<div class="card__head">
+								<h2 class="h3">Announcements</h2>
+								<div class="muted small">Admin-configurable</div>
+							</div>
+							<ul class="list">
+								<li>Welcome to the abstract submission portal.</li>
+								<li>Ensure conflicts of interest are declared by reviewers.</li>
+								<li>Automated reminders are sent after 48 hours of inactivity (server-side job required).</li>
+							</ul>
+						</div>
+					</div>
+				</section>
+
+				<section id="viewProfile" class="view hidden">
+					<div class="page-head">
+						<div>
+							<h1 class="h2">Profile</h1>
+							<div class="muted">Manage your personal and contact information.</div>
+						</div>
+					</div>
+					<div class="card">
+						<form id="formProfile" class="form">
+							<div class="grid-2">
+								<div class="form__row">
+									<label class="label" for="profileName">Full name</label>
+									<input id="profileName" class="input" required />
+								</div>
+								<div class="form__row">
+									<label class="label" for="profileAffiliation">Affiliation</label>
+									<input id="profileAffiliation" class="input" placeholder="Institution / Organization" />
+								</div>
+								<div class="form__row">
+									<label class="label" for="profileEmail">Email</label>
+									<input id="profileEmail" class="input" type="email" required disabled />
+								</div>
+								<div class="form__row">
+									<label class="label" for="profilePhone">Phone</label>
+									<input id="profilePhone" class="input" placeholder="Optional" />
+								</div>
+								<div class="form__row">
+									<label class="label" for="profileCountry">Country</label>
+									<input id="profileCountry" class="input" placeholder="Optional" />
+								</div>
+								<div class="form__row">
+									<label class="label" for="profileOrcid">ORCID</label>
+									<input id="profileOrcid" class="input" placeholder="0000-0000-0000-0000" />
+								</div>
+							</div>
+							<div class="divider"></div>
+							<div class="form__row form__row--inline">
+								<button class="btn btn--primary" type="submit">Save profile</button>
+								<button id="btnChangePassword" class="btn btn--outline" type="button">Change password</button>
+							</div>
+						</form>
+					</div>
+				</section>
+
+				<section id="viewAuthorSubmissions" class="view hidden">
+					<div class="page-head">
+						<div>
+							<h1 class="h2">My Abstracts</h1>
+							<div class="muted">Create, edit drafts, and track your submissions.</div>
+						</div>
+						<div class="page-actions">
+							<button id="btnAuthorNew" class="btn btn--primary" type="button">New Submission</button>
+						</div>
+					</div>
+					<div class="card">
+						<div class="table-tools">
+							<div class="table-tools__left">
+								<input id="authorSearch" class="input" placeholder="Search title, keywords, track..." />
+							</div>
+							<div class="table-tools__right">
+								<select id="authorStatusFilter" class="input">
+									<option value="">All statuses</option>
+								</select>
+							</div>
+						</div>
+						<div class="table-wrap">
+							<table class="table">
+								<thead>
+									<tr>
+										<th>Title</th>
+										<th>Track</th>
+										<th>Status</th>
+										<th>Last updated</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="authorAbstractsTbody"></tbody>
+							</table>
+						</div>
+						<div id="authorAbstractsEmpty" class="empty hidden">No abstracts yet.</div>
+					</div>
+				</section>
+
+				<section id="viewAuthorNew" class="view hidden">
+					<div class="page-head">
+						<div>
+							<h1 class="h2">Abstract Submission</h1>
+							<div class="muted">Multi-step workflow with autosave drafts.</div>
+						</div>
+						<div class="page-actions">
+							<button id="btnSaveDraft" class="btn btn--outline" type="button">Save draft</button>
+							<button id="btnExitWizard" class="btn btn--ghost" type="button">Exit</button>
+						</div>
+					</div>
+
+					<div class="card">
+						<div class="progress">
+							<div class="progress__meta">
+								<div id="wizardStepLabel" class="small muted">Step 1 of 8</div>
+								<div id="wizardStatus" class="small muted">Draft</div>
+							</div>
+							<div class="progress__bar"><div id="wizardProgress" class="progress__barFill"></div></div>
+						</div>
+
+						<form id="formWizard" class="wizard" novalidate>
+							<div class="wizard__steps">
+								<button class="wizard__step" type="button" data-step="0">Profile</button>
+								<button class="wizard__step" type="button" data-step="1">Title</button>
+								<button class="wizard__step" type="button" data-step="2">Body</button>
+								<button class="wizard__step" type="button" data-step="3">Keywords</button>
+								<button class="wizard__step" type="button" data-step="4">Track</button>
+								<button class="wizard__step" type="button" data-step="5">Co-authors</button>
+								<button class="wizard__step" type="button" data-step="6">Upload</button>
+								<button class="wizard__step" type="button" data-step="7">Confirm</button>
+							</div>
+
+							<div class="wizard__panel" data-panel="0">
+								<h2 class="h3">1) Profile details</h2>
+								<p class="muted">Confirm the presenter details for this submission.</p>
+								<div class="grid-2">
+									<div class="form__row">
+										<label class="label" for="wProfileName">Presenter name</label>
+										<input id="wProfileName" class="input" required />
+									</div>
+									<div class="form__row">
+										<label class="label" for="wProfileAffiliation">Affiliation</label>
+										<input id="wProfileAffiliation" class="input" required />
+									</div>
+									<div class="form__row">
+										<label class="label" for="wProfileEmail">Contact email</label>
+										<input id="wProfileEmail" class="input" type="email" required />
+									</div>
+									<div class="form__row">
+										<label class="label" for="wProfileOrcid">ORCID (optional)</label>
+										<input id="wProfileOrcid" class="input" />
+									</div>
+								</div>
+							</div>
+
+							<div class="wizard__panel hidden" data-panel="1">
+								<h2 class="h3">2) Abstract title</h2>
+								<div class="form__row">
+									<label class="label" for="wTitle">Title</label>
+									<input id="wTitle" class="input" required maxlength="180" />
+									<div class="hint">Max 180 characters.</div>
+								</div>
+							</div>
+
+							<div class="wizard__panel hidden" data-panel="2">
+								<h2 class="h3">3) Abstract body</h2>
+								<div class="form__row">
+									<label class="label" for="wBody">Body</label>
+									<textarea id="wBody" class="textarea" required minlength="100" placeholder="Background, methods, results, conclusions... (min 100 characters)"></textarea>
+								</div>
+							</div>
+
+							<div class="wizard__panel hidden" data-panel="3">
+								<h2 class="h3">4) Keywords</h2>
+								<div class="form__row">
+									<label class="label" for="wKeywords">Keywords</label>
+									<input id="wKeywords" class="input" required placeholder="e.g., diagnostics; immunoassay; epidemiology" />
+									<div class="hint">Separate with semicolons or commas.</div>
+								</div>
+							</div>
+
+							<div class="wizard__panel hidden" data-panel="4">
+								<h2 class="h3">5) Track / category</h2>
+								<div class="grid-2">
+									<div class="form__row">
+										<label class="label" for="wTrack">Track</label>
+										<select id="wTrack" class="input" required>
+											<option value="">Select a track</option>
+											<option>Clinical Diagnostics</option>
+											<option>Laboratory Medicine</option>
+											<option>Public Health</option>
+											<option>Biomedical Research</option>
+											<option>Health Technology</option>
+										</select>
+									</div>
+									<div class="form__row">
+										<label class="label" for="wCategory">Category</label>
+										<select id="wCategory" class="input" required>
+											<option value="">Select a category</option>
+											<option>Oral</option>
+											<option>Poster</option>
+											<option>Workshop</option>
+										</select>
+									</div>
+								</div>
+							</div>
+
+							<div class="wizard__panel hidden" data-panel="5">
+								<h2 class="h3">6) Co-author information</h2>
+								<p class="muted">Add all contributing authors in order.</p>
+								<div class="form__row">
+									<button id="btnAddCoAuthor" class="btn btn--outline" type="button">Add co-author</button>
+								</div>
+								<div id="coAuthorsList" class="coauthors"></div>
+							</div>
+
+							<div class="wizard__panel hidden" data-panel="6">
+								<h2 class="h3">7) Optional file upload</h2>
+								<p class="muted">Upload a supplementary file. (In production, file storage requires server-side handling.)</p>
+								<div class="form__row">
+									<label class="label" for="wFile">File</label>
+									<input id="wFile" class="input" type="file" />
+									<div class="hint">Allowed types and virus scanning must be enforced server-side.</div>
+								</div>
+							</div>
+
+							<div class="wizard__panel hidden" data-panel="7">
+								<h2 class="h3">8) Final confirmation</h2>
+								<div class="callout callout--warning">
+									<strong>Confirm before submission.</strong>
+									<div class="muted">After submitting, edits may require admin screening or a revision request.</div>
+								</div>
+								<div id="confirmSummary" class="summary"></div>
+								<div class="divider"></div>
+								<div class="form__row form__row--inline">
+									<button id="btnSubmitAbstract" class="btn btn--primary" type="button">Submit abstract</button>
+									<button id="btnBackToEdit" class="btn btn--outline" type="button">Back to edit</button>
+								</div>
+							</div>
+
+							<div class="wizard__nav">
+								<button id="btnPrev" class="btn btn--outline" type="button">Previous</button>
+								<button id="btnNext" class="btn btn--primary" type="button">Next</button>
+							</div>
+						</form>
+					</div>
+				</section>
+
+				<section id="viewReviewerQueue" class="view hidden">
+					<div class="page-head">
+						<div>
+							<h1 class="h2">Assigned Abstracts</h1>
+							<div class="muted">You can only see abstracts assigned to you.</div>
+						</div>
+					</div>
+					<div class="card">
+						<div class="table-tools">
+							<div class="table-tools__left">
+								<input id="reviewerSearch" class="input" placeholder="Search assigned abstracts..." />
+							</div>
+							<div class="table-tools__right">
+								<select id="reviewerStatusFilter" class="input">
+									<option value="">All statuses</option>
+									<option>Under Review</option>
+									<option>Revision Requested</option>
+								</select>
+							</div>
+						</div>
+						<div class="table-wrap">
+							<table class="table">
+								<thead>
+									<tr>
+										<th>Title</th>
+										<th>Track</th>
+										<th>Status</th>
+										<th>Due</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="reviewerQueueTbody"></tbody>
+							</table>
+						</div>
+						<div id="reviewerQueueEmpty" class="empty hidden">No assigned abstracts.</div>
+					</div>
+				</section>
+
+				<section id="viewReviewerGuidance" class="view hidden">
+					<div class="page-head">
+						<div>
+							<h1 class="h2">Reviewer Guidance</h1>
+							<div class="muted">How to score consistently, ethically, and fairly.</div>
+						</div>
+					</div>
+					<div class="grid-2">
+						<div class="card">
+							<h2 class="h3">Scoring principles</h2>
+							<ul class="list">
+								<li>Use the rubric criteria as written; avoid implicit biases.</li>
+								<li>Justify scores in comments with concrete evidence from the abstract.</li>
+								<li>Do not discuss assigned abstracts with other reviewers.</li>
+								<li>Declare conflicts of interest immediately.</li>
+							</ul>
+						</div>
+						<div class="card">
+							<h2 class="h3">Ethical standards</h2>
+							<ul class="list">
+								<li>Confidentiality: do not share content outside the platform.</li>
+								<li>Fairness: evaluate content, not authorship identity.</li>
+								<li>Professionalism: keep comments constructive and respectful.</li>
+								<li>Turnaround: complete reviews within the expected timeframe.</li>
+							</ul>
+						</div>
+					</div>
+					<div class="card">
+						<h2 class="h3">Rubric guide</h2>
+						<p class="muted">Score each criterion 1–5 (5 = excellent). Provide brief comments for each.</p>
+						<div class="rubric">
+							<div class="rubric__item"><strong>Originality</strong><div class="muted">Novelty of the idea and contribution.</div></div>
+							<div class="rubric__item"><strong>Scientific quality</strong><div class="muted">Rigor, validity, and support for claims.</div></div>
+							<div class="rubric__item"><strong>Relevance</strong><div class="muted">Fit to conference themes and track.</div></div>
+							<div class="rubric__item"><strong>Clarity</strong><div class="muted">Organization, writing quality, and readability.</div></div>
+							<div class="rubric__item"><strong>Methodology</strong><div class="muted">Appropriateness of methods and reproducibility.</div></div>
+							<div class="rubric__item"><strong>Overall recommendation</strong><div class="muted">Accept / Minor / Major / Reject.</div></div>
+						</div>
+					</div>
+				</section>
+
+				<section id="viewAdminAbstracts" class="view hidden">
+					<div class="page-head">
+						<div>
+							<h1 class="h2">All Abstracts</h1>
+							<div class="muted">Filter by status, topic/track, author, reviewer, and date.</div>
+						</div>
+						<div class="page-actions">
+							<button id="btnAdminAssignAuto" class="btn btn--primary" type="button">Auto-assign reviewers</button>
+							<button id="btnAdminBulkNotify" class="btn btn--outline" type="button">Bulk notify</button>
+							<button id="btnAdminExport" class="btn btn--outline" type="button">Export CSV</button>
+						</div>
+					</div>
+					<div class="card">
+						<div class="filters">
+							<input id="adminSearch" class="input" placeholder="Search title, author, keyword..." />
+							<select id="adminStatus" class="input"></select>
+							<select id="adminTrack" class="input">
+								<option value="">All tracks</option>
+								<option>Clinical Diagnostics</option>
+								<option>Laboratory Medicine</option>
+								<option>Public Health</option>
+								<option>Biomedical Research</option>
+								<option>Health Technology</option>
+							</select>
+							<input id="adminFrom" class="input" type="date" />
+							<input id="adminTo" class="input" type="date" />
+						</div>
+
+						<div class="table-wrap">
+							<table class="table">
+								<thead>
+									<tr>
+										<th>Title</th>
+										<th>Author</th>
+										<th>Track</th>
+										<th>Status</th>
+										<th>Reviews</th>
+										<th>Updated</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="adminAbstractsTbody"></tbody>
+							</table>
+						</div>
+						<div id="adminAbstractsEmpty" class="empty hidden">No matching abstracts.</div>
+					</div>
+				</section>
+
+				<section id="viewAdminReviewers" class="view hidden">
+					<div class="page-head">
+						<div>
+							<h1 class="h2">Reviewer Management</h1>
+							<div class="muted">Workload, expertise tags, availability, COI rules.</div>
+						</div>
+						<div class="page-actions">
+							<button id="btnAddReviewer" class="btn btn--primary" type="button">Add reviewer</button>
+						</div>
+					</div>
+					<div class="grid-2">
+						<div class="card">
+							<h2 class="h3">Reviewer workload</h2>
+							<div id="reviewerWorkload" class="empty">No reviewers.</div>
+						</div>
+						<div class="card">
+							<h2 class="h3">Auto-assignment rules</h2>
+							<ul class="list">
+								<li>Match reviewer expertise to track keywords.</li>
+								<li>Balance workload by selecting least-loaded eligible reviewers.</li>
+								<li>Exclude conflicts of interest (same affiliation, explicit COI list).</li>
+								<li>Assign exactly 2 independent reviewers per abstract.</li>
+							</ul>
+							<p class="muted small">In production, these rules should be enforced server-side and logged in the audit trail.</p>
+						</div>
+					</div>
+					<div class="card">
+						<h2 class="h3">Reviewers</h2>
+						<div class="table-wrap">
+							<table class="table">
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Email</th>
+										<th>Expertise</th>
+										<th>Availability</th>
+										<th>Assigned</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="adminReviewersTbody"></tbody>
+							</table>
+						</div>
+					</div>
+				</section>
+
+				<section id="viewAdminAnalytics" class="view hidden">
+					<div class="page-head">
+						<div>
+							<h1 class="h2">Analytics & Reports</h1>
+							<div class="muted">Operational metrics for submissions and reviews.</div>
+						</div>
+					</div>
+					<div id="analyticsCards" class="cards"></div>
+					<div class="grid-2">
+						<div class="card">
+							<h2 class="h3">Reviewer distribution</h2>
+							<div id="analyticsReviewerDist" class="empty">No data.</div>
+						</div>
+						<div class="card">
+							<h2 class="h3">Decision trends</h2>
+							<div id="analyticsDecisionTrends" class="empty">No data.</div>
+						</div>
+					</div>
+				</section>
+
+				<section id="viewAdminAudit" class="view hidden">
+					<div class="page-head">
+						<div>
+							<h1 class="h2">Audit Trail</h1>
+							<div class="muted">Key actions (assignments, decisions, status changes).</div>
+						</div>
+						<div class="page-actions">
+							<button id="btnClearAudit" class="btn btn--outline" type="button">Clear (demo)</button>
+						</div>
+					</div>
+					<div class="card">
+						<div class="table-wrap">
+							<table class="table">
+								<thead>
+									<tr>
+										<th>Time (UTC)</th>
+										<th>Actor</th>
+										<th>Action</th>
+										<th>Target</th>
+										<th>Details</th>
+									</tr>
+								</thead>
+								<tbody id="auditTbody"></tbody>
+							</table>
+						</div>
+						<div id="auditEmpty" class="empty hidden">No audit events yet.</div>
+					</div>
+				</section>
+			</main>
+		</div>
+	</div>
+
+	<!-- Modals -->
+	<div id="modalBackdrop" class="modal-backdrop hidden" role="presentation"></div>
+
+	<div id="modalRegister" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="registerTitle">
+		<div class="modal__panel">
+			<div class="modal__head">
+				<h2 id="registerTitle" class="h3">Create account</h2>
+				<button class="icon-btn" type="button" data-close-modal>&times;</button>
+			</div>
+			<form id="formRegister" class="form">
+				<div class="form__row">
+					<label class="label" for="regRole">Role</label>
+					<select id="regRole" class="input" required>
+						<option value="author">Respondent / Author</option>
+						<option value="reviewer">Reviewer</option>
+						<option value="admin">Administrator</option>
+					</select>
+					<div class="hint">In production, admin/reviewer creation is typically restricted.</div>
+				</div>
+				<div class="form__row">
+					<label class="label" for="regName">Full name</label>
+					<input id="regName" class="input" required />
+				</div>
+				<div class="form__row">
+					<label class="label" for="regEmail">Email</label>
+					<input id="regEmail" class="input" type="email" required />
+				</div>
+				<div class="form__row">
+					<label class="label" for="regPassword">Password</label>
+					<input id="regPassword" class="input" type="password" required minlength="8" />
+					<div class="hint">Front-end validation only. Hash + enforce rules server-side.</div>
+				</div>
+				<div class="form__row form__row--inline">
+					<button class="btn btn--primary" type="submit">Create</button>
+					<button class="btn btn--outline" type="button" data-close-modal>Cancel</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<div id="modalReset" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+		<div class="modal__panel">
+			<div class="modal__head">
+				<h2 id="resetTitle" class="h3">Reset password</h2>
+				<button class="icon-btn" type="button" data-close-modal>&times;</button>
+			</div>
+			<form id="formReset" class="form">
+				<div class="callout">
+					<strong>Backend required:</strong>
+					<div class="muted">Send a secure reset email link + token verification server-side.</div>
+				</div>
+				<div class="form__row">
+					<label class="label" for="resetEmail">Email</label>
+					<input id="resetEmail" class="input" type="email" required />
+				</div>
+				<div class="form__row form__row--inline">
+					<button class="btn btn--primary" type="submit">Send reset email</button>
+					<button class="btn btn--outline" type="button" data-close-modal>Cancel</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<div id="modalReview" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+		<div class="modal__panel modal__panel--lg">
+			<div class="modal__head">
+				<h2 id="reviewTitle" class="h3">Review abstract</h2>
+				<button class="icon-btn" type="button" data-close-modal>&times;</button>
+			</div>
+			<div class="modal__body">
+				<div id="reviewAbstractMeta" class="muted small"></div>
+				<div id="reviewAbstractBody" class="review-body"></div>
+				<div class="divider"></div>
+				<form id="formReview" class="form">
+					<div class="callout">
+						<strong>Independence:</strong>
+						<div class="muted">Other reviewer scores/comments are hidden until decisions are made.</div>
+					</div>
+					<div class="rubric-form">
+						<div class="rubric-form__row">
+							<div class="rubric-form__label">Originality</div>
+							<input class="input" type="number" min="1" max="5" step="1" name="originality" required />
+							<input class="input" name="originalityComment" placeholder="Comment" required />
+						</div>
+						<div class="rubric-form__row">
+							<div class="rubric-form__label">Scientific quality</div>
+							<input class="input" type="number" min="1" max="5" step="1" name="quality" required />
+							<input class="input" name="qualityComment" placeholder="Comment" required />
+						</div>
+						<div class="rubric-form__row">
+							<div class="rubric-form__label">Relevance</div>
+							<input class="input" type="number" min="1" max="5" step="1" name="relevance" required />
+							<input class="input" name="relevanceComment" placeholder="Comment" required />
+						</div>
+						<div class="rubric-form__row">
+							<div class="rubric-form__label">Clarity</div>
+							<input class="input" type="number" min="1" max="5" step="1" name="clarity" required />
+							<input class="input" name="clarityComment" placeholder="Comment" required />
+						</div>
+						<div class="rubric-form__row">
+							<div class="rubric-form__label">Methodology</div>
+							<input class="input" type="number" min="1" max="5" step="1" name="methodology" required />
+							<input class="input" name="methodologyComment" placeholder="Comment" required />
+						</div>
+					</div>
+					<div class="divider"></div>
+					<div class="grid-2">
+						<div class="form__row">
+							<label class="label" for="reviewRecommendation">Overall recommendation</label>
+							<select id="reviewRecommendation" class="input" required>
+								<option value="">Select</option>
+								<option>Accept</option>
+								<option>Minor Revision</option>
+								<option>Major Revision</option>
+								<option>Reject</option>
+							</select>
+						</div>
+						<div class="form__row">
+							<label class="label" for="reviewOverallComment">Overall comments</label>
+							<input id="reviewOverallComment" class="input" required placeholder="Concise summary + key improvements" />
+						</div>
+					</div>
+					<div class="form__row form__row--inline">
+						<button class="btn btn--primary" type="submit">Submit review</button>
+						<button class="btn btn--outline" type="button" data-close-modal>Cancel</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<div id="modalAdminAbstract" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="adminAbstractTitle">
+		<div class="modal__panel modal__panel--lg">
+			<div class="modal__head">
+				<h2 id="adminAbstractTitle" class="h3">Abstract details</h2>
+				<button class="icon-btn" type="button" data-close-modal>&times;</button>
+			</div>
+			<div class="modal__body">
+				<div id="adminAbstractDetails" class="details"></div>
+				<div class="divider"></div>
+				<form id="formAdminDecision" class="form">
+					<div class="grid-2">
+						<div class="form__row">
+							<label class="label" for="adminStatusUpdate">Status</label>
+							<select id="adminStatusUpdate" class="input" required></select>
+						</div>
+						<div class="form__row">
+							<label class="label" for="adminDecisionNote">Decision note</label>
+							<input id="adminDecisionNote" class="input" placeholder="Visible to admins; author comms server-side" />
+						</div>
+					</div>
+					<div class="form__row form__row--inline">
+						<button class="btn btn--primary" type="submit">Save status</button>
+						<button id="btnAdminReassign" class="btn btn--outline" type="button">Reassign reviewers</button>
+						<button class="btn btn--outline" type="button" data-close-modal>Close</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<div id="notificationsPanel" class="notifications hidden" role="dialog" aria-modal="true" aria-label="Notifications">
+		<div class="notifications__panel">
+			<div class="notifications__head">
+				<h2 class="h3">Notifications</h2>
+				<button id="btnCloseNotifications" class="icon-btn" type="button">&times;</button>
+			</div>
+			<div id="notificationsList" class="notifications__list"></div>
+		</div>
+	</div>
+
+	<script src="js/app.js" type="module"></script>
+</body>
+</html>
